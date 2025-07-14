@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # ---- SERVIÇO DO BANCO DE DADOS ----
+  postgres-db:
+    image: postgres:15
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: ecommerce
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ecommerce-net
+
+  # ---- SERVIÇO DE AUTENTICAÇÃO ----
+  auth-service:
+    build:
+      context: ./auth-service
+    container_name: auth-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres-db
+    networks:
+      - ecommerce-net
+    environment:
+      # Configurações para o Spring se conectar ao banco de dados no outro contêiner.
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/ecommerce
+      - SPRING_DATASOURCE_USERNAME=admin
+      - SPRING_DATASOURCE_PASSWORD=admin
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+
+# ---- DEFINIÇÃO DA REDE ----
+networks:
+  ecommerce-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
